@@ -1,40 +1,41 @@
 from scipy.io import wavfile
-#import wave
 import numpy as np
+from collections import defaultdict
 import matplotlib.pyplot as plt
+import seaborn
+#%matplotlib inline
 
-# creae
 fs, data = wavfile.read("/Users/gab/Documents/MSAN/ML2/classy.wav")
-#print 'fs', fs
-#print 'data', data
-#print len(data)
 ch1 = list()
 ch2 = list()
 for dp in data:
 	ch1.append(dp[0])
 	ch2.append(dp[1])
 
-#print len(ch1)
-
-# creates one flat array
-#x = np.fromfile(open('/Users/gab/Documents/MSAN/ML2/classy.wav'),np.int16)[24:]
-#n = len(x)
-
-#x = np.fromfile(open('/Users/gab/Downloads/06-Loro.mp3'),np.int16)[24:]
-
-#plt.plot(x[0:88200])
 plt.plot(ch1)
 plt.show()
 
+plt.plot(ch2)
+plt.show()
 
-#X = wave.open('/Users/gab/Documents/MSAN/ML2/classy.wav')
-#print X.Wave_read.getsampwidth()
+piu_hash = defaultdict(list)
 
-fd = np.fft.fft(ch1[0:44100])
-t = np.arange(len(ch1[0:44100]))
-print t.shape[-1]
-freq = np.fft.fftfreq(len(fd),1/float(t.shape[-1]))
-print min(freq),max(freq)
-#plt.plot(freq,fd)
-#plt.show()
+# need to do this for each song:
+meta = 'ARTIST/SONG'
+i = 0
+for sec in np.array_split(ch1, np.ceil(len(ch1)/float(44100))):
+    fd = abs(np.fft.fft(sec))
+    t = np.arange(len(sec))
+    freq = abs(np.fft.fftfreq(len(fd),1/float(44100)))
+    #plt.plot(freq[30:300],fd[30:300])
+    #plt.show()
+    a = int(freq[30+np.argmax(fd[30:40])])
+    b = int(freq[40+np.argmax(fd[40:80])])
+    c = int(freq[80+np.argmax(fd[80:120])])
+    d = int(freq[120+np.argmax(fd[120:180])])
+    e = int(freq[180+np.argmax(fd[180:300])])
+    piu_hash[(a,b,c,d,e)].append([i,meta])
+    i += 1
 
+
+#piu_hash
