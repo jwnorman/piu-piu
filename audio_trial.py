@@ -5,37 +5,48 @@ import matplotlib.pyplot as plt
 import seaborn
 #%matplotlib inline
 
-fs, data = wavfile.read("/Users/gab/Documents/MSAN/ML2/classy.wav")
-ch1 = list()
-ch2 = list()
-for dp in data:
-	ch1.append(dp[0])
-	ch2.append(dp[1])
+class PiuHash(object):  
+    def __init__(self, window_length=1, bins=[30,40,80,120,180,300]):
+        self.piu_hash = defaultdict(list)
+        self.window_length = window_length
+        self.bins = bins
+        self.bins = zip(self.bins, np.roll(self.bins, -1))
+        self.bins.pop()
 
-plt.plot(ch1)
-plt.show()
+    def hash_song(self, channel=None, meta=""):
+        """ Hash one song
 
-plt.plot(ch2)
-plt.show()
+            channel: a list or numpy array of frequencies from a wav file
+            meta: unique id of wav file
+        """
 
-piu_hash = defaultdict(list)
+        num_splits = np.ceil(len(channel)/float(44100*self.window_length))
+        song_segments = np.array_split(channel, num_splits)
+        for i, song_segment in enumerate(song_segments):
+            fd = abs(np.fft.fft(song_segment))
+            t = np.arange(len(song_segment))
+            freq = abs(np.fft.fftfreq(len(fd),1/float(44100)))
+            hash_temp = tuple([self.argmax_frequency(fd, freq, bin) for bin in self.bins])
+            self.piu_hash[hash_temp].append([i, meta])
 
-# need to do this for each song:
-meta = 'ARTIST/SONG'
-i = 0
-for sec in np.array_split(ch1, np.ceil(len(ch1)/float(44100))):
-    fd = abs(np.fft.fft(sec))
-    t = np.arange(len(sec))
-    freq = abs(np.fft.fftfreq(len(fd),1/float(44100)))
-    #plt.plot(freq[30:300],fd[30:300])
-    #plt.show()
-    a = int(freq[30+np.argmax(fd[30:40])])
-    b = int(freq[40+np.argmax(fd[40:80])])
-    c = int(freq[80+np.argmax(fd[80:120])])
-    d = int(freq[120+np.argmax(fd[120:180])])
-    e = int(freq[180+np.argmax(fd[180:300])])
-    piu_hash[(a,b,c,d,e)].append([i,meta])
-    i += 1
+    @staticmethod
+    def argmax_frequency(fd, freq, bin):
+        relative_argmax = np.argmax(fd[bin[0]:bin[1]])
+        return int(freq[bin[0] + relative_argmax])
 
+def main():
+    try:
+        fs, data = wavfile.read("/Users/gab/Documents/MSAN/ML2/classy.wav")
+    except:
+        fs, data = wavfile.read("/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/classy.wav")
+    channel1 = data[:,0]
+    meta = 'ARTIST_SONG_ID'
+    # plt.plot(channel1)
+    # plt.show()
 
-#piu_hash
+    piu = PiuHash()
+    piu.hash_song(channel1, meta)
+    print piu.piu_hash
+
+if __name__ == '__main__':
+    main()
