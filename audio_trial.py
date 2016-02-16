@@ -40,7 +40,7 @@ def main():
         try:
             fs, data = wavfile.read("/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/classy.wav")
         except:
-            fs, data = wavfile.read("Bens_path_to_wav_file")
+            fs, data = wavfile.read("/Users/ben/src/msan/adv_machineLearning/music_wav/el_nino.wav")
     channel1 = data[:,0]
     meta = 'ARTIST_SONG_ID'
     # plt.plot(channel1)
