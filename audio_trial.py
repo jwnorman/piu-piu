@@ -41,6 +41,9 @@ class PiuHash(object):
             freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
             self.hash_it(fd, freq, i, meta=meta)
 
+    def hash_dir(self, dir, channel = None):
+        pass
+
     def hash_it(self, fd, freq, i=None, test=False, meta=None):
         ret = list()
         for hash_num in range(self.num_hashes):
