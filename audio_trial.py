@@ -5,6 +5,8 @@ from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 import seaborn
 import operator
+import glob
+import sys
 #%matplotlib inline
 
 class PredictSong(object):
@@ -41,8 +43,21 @@ class PiuHash(object):
             freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
             self.hash_it(fd, freq, i, meta=meta)
 
-    def hash_dir(self, dir, channel = None):
-        pass
+    def hash_dir(self, directory, channel = None, meta=""):
+        """
+        Read and hash each .wav song in the directory <dir>
+        """
+        files = glob.glob(directory + "/*.wav")
+        n = len(files)
+        i = 1
+        for filename in files:
+            sys.stdout.write('%.2f%%\r' % (i / n * 100))
+            sys.stdout.flush()
+            i += 1
+            fs, data = wavfile.read(filename)
+            channel1 = data[:,0]
+            piu.hash_song(channel1, str(i))
+
 
     def hash_it(self, fd, freq, i=None, test=False, meta=None):
         ret = list()
