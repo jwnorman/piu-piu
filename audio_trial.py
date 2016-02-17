@@ -7,6 +7,20 @@ import seaborn
 import operator
 #%matplotlib inline
 
+class PredictSong(object):
+    def __init__(self, song, num_predictions):
+        self.song = song
+        self.num_predictions = num_predictions
+        self.counters = [Counter() for i in range(num_predictions)]
+        self.props = [Counter() for i in range(num_predictions)]
+
+    @staticmethod
+    def song_streamer(song_segments):
+        for i, song_segment in enumerate(song_segments):
+            fd = abs(np.fft.fft(song_segment))
+            freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
+            yield fd, freq
+
 class PiuHash(object):
     def __init__(self, window_length=1, bins=[[30,40,80,120,180,300]]):
         self.num_hashes = len(bins)
@@ -41,23 +55,26 @@ class PiuHash(object):
         """
         song: the output from wavfile.read()
         """
-        counters = [Counter() for i in range(self.num_hashes)]
-        props = [Counter() for i in range(self.num_hashes)]
+        pred_song = PredictSong(song, self.num_hashes)
         channel1 = song[:,0]
         num_splits = np.ceil(len(channel1)/float(44100*self.window_length))
         song_segments = np.array_split(channel1, num_splits)
-        streamer = self.song_streamer(song_segments)
+        streamer = pred_song.song_streamer(song_segments)
+
         match = False
         while not match:
             fd, freq = streamer.next()
             res = self.hash_it(fd, freq, test=True) # [(24,48,80,111,200), (11,111,200)]
             for i, key in enumerate(res):
-                counters[i] += Counter([elem[1] for elem in self.piu_hash[i][key]]) # running sum
-                props[i] = {k: 1/sum(counters[i].values()) for k,v in counters[i].iteritems()} # proportion
-                max_key = max(props[i].iteritems(), key=operator.itemgetter(1))[0]
-                if props[i][max_key] >= .8:
-                    print props[i]
+                pred_song.counters[i] += Counter([elem[1] for elem in self.piu_hash[i][key]]) # running sum
+                pred_song.props[i] = {k: 1/sum(pred_song.counters[i].values()) for k,v in pred_song.counters[i].iteritems()} # proportion        
+                max_key = max(pred_song.props[i].iteritems(), key=operator.itemgetter(1))[0]
+                if pred_song.props[i][max_key] >= .8:
+                    print pred_song.props[i]
                     return max_key
+            print 'No matches found'
+            return 0
+
 
     def print_hashes(self):
         for hash_num in range(self.num_hashes):
@@ -65,12 +82,6 @@ class PiuHash(object):
             for k,v in self.piu_hash[hash_num].iteritems():
                 print '\t' + str(k) + ':\t\t' + str(v)
             print ''
-
-    def song_streamer(self, song_segments):
-        for i, song_segment in enumerate(song_segments):
-            fd = abs(np.fft.fft(song_segment))
-            freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
-            yield fd, freq
 
     @staticmethod
     def get_lit(bins):
