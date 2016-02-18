@@ -56,7 +56,7 @@ class PiuHash(object):
             i += 1
             fs, data = wavfile.read(filename)
             channel1 = data[:,0]
-            piu.hash_song(channel1, str(i))
+            self.hash_song(channel1, str(i))
 
 
     def hash_it(self, fd, freq, i=None, test=False, meta=None):
