@@ -16,6 +16,10 @@ class PredictSong(object):
         self.num_predictions = num_predictions
         self.counters = [Counter() for i in range(num_predictions)]
         self.props = [Counter() for i in range(num_predictions)]
+        
+        
+
+
 
     def song_streamer(self, song_segments):
         for i, song_segment in enumerate(song_segments):
@@ -67,6 +71,16 @@ class PiuHash(object):
         self.piu_hash = [defaultdict(list) for i in xrange(self.num_hashes)]
         self.window_length = window_length
         self.bins = [self.get_lit(bin_itr) for bin_itr in bins]
+
+        #hard coding meta data, using 771 songs as train set
+        self.meta = {}
+        with open('song_meta.tsv') as table:
+            headers = table.readline() #ignore first line
+            for line in table:
+                _id, artist, album, song, format_song = line.split('\t')
+                self.meta[_id] = {'artist': artist, 'album':album,\
+                                  'song': song, 'format_song':format_song}
+                                  
 
     def hash_song(self, channel=None, meta=""):
         """ Hash one song
@@ -128,6 +142,8 @@ class PiuHash(object):
     def argmax_frequency(fd, freq, bin_itr):
         relative_argmax = np.argmax(fd[bin_itr[0]:bin_itr[1]])
         return int(freq[bin_itr[0] + relative_argmax])
+
+
 
 def main():
     try:
