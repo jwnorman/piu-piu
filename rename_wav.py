@@ -5,4 +5,9 @@ import glob, shutil, re
 #reconverts them back to normal. 
 
 for f in glob.glob('*.wav'):
-	shutil.move(f, re.sub(r'^[0-9]+', '', f.strip()))
+	new_filename = re.sub(r'^[0-9-]+_', '', \
+						   re.sub(r"[\\'()-]", '', 
+				           re.sub(r"[\\[],]", '',  \
+				           re.sub(r'\s', '_', f)))).strip()
+	print new_filename
+	shutil.move(f, new_filename)

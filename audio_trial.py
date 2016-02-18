@@ -47,10 +47,11 @@ class PiuHash(object):
         """
         Read and hash each .wav song in the directory <dir>
         """
-        files = glob.glob(directory + "/*.wav")
+        files = glob.glob(directory + "*.wav")
         n = len(files)
         i = 1
         for filename in files:
+            print filename
             sys.stdout.write('%.2f%%\r' % (i / n * 100))
             sys.stdout.flush()
             i += 1
