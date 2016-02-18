@@ -10,18 +10,56 @@ import sys
 #%matplotlib inline
 
 class PredictSong(object):
-    def __init__(self, song, num_predictions):
+    def __init__(self, song, piu_hash_obj, num_predictions):
         self.song = song
+        self.piu_hash_obj = piu_hash_obj
         self.num_predictions = num_predictions
         self.counters = [Counter() for i in range(num_predictions)]
         self.props = [Counter() for i in range(num_predictions)]
 
-    @staticmethod
-    def song_streamer(song_segments):
+    def song_streamer(self, song_segments):
         for i, song_segment in enumerate(song_segments):
-            fd = abs(np.fft.fft(song_segment))
-            freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
-            yield fd, freq
+            yield self.get_fft(song_segment)
+    
+    @staticmethod
+    def get_fft(song_segment):
+        fd = abs(np.fft.fft(song_segment))
+        freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
+        return fd, freq
+
+    def predict(self):
+        """
+        song: the output from wavfile.read()
+        """
+        channel1 = self.song[:,0]
+        num_splits = np.ceil(len(channel1)/float(44100*self.piu_hash_obj.window_length))
+        song_segments = np.array_split(channel1, num_splits)
+        streamer = self.song_streamer(song_segments)
+        match = False
+        while not match:
+            try:
+                fd, freq = streamer.next()
+            except StopIteration as e:
+                return 0
+            match = self.predict_iteration(fd, freq)
+    
+    def predict_iteration(self, fd, freq):
+        res = self.piu_hash_obj.hash_it(fd, freq, test=True) # [(24,48,80,111,200), (11,111,200)]
+        print res
+        for i, key in enumerate(res):
+            self.counters[i] += Counter([elem[1] for elem in self.piu_hash_obj.piu_hash[i][key]]) # running sum
+            self.props[i] = {k: 1/sum(self.counters[i].values()) for k,v in self.counters[i].iteritems()} # proportion
+            print self.piu_hash_obj.piu_hash[i][key]
+            print i, key
+            print self.counters
+            print self.props
+            print ''
+            max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
+            if self.props[i][max_key] >= .8:
+                print self.props[i]
+                return max_key
+        print 'No matches found'
+        return False
 
 class PiuHash(object):
     def __init__(self, window_length=1, bins=[[30,40,80,120,180,300]]):
@@ -59,7 +97,6 @@ class PiuHash(object):
             channel1 = data[:,0]
             self.hash_song(channel1, str(i))
 
-
     def hash_it(self, fd, freq, i=None, test=False, meta=None):
         ret = list()
         for hash_num in range(self.num_hashes):
@@ -69,31 +106,6 @@ class PiuHash(object):
             else: # testing
                 ret.append(hash_temp)
         if test: return ret
-
-    def predict(self, song):
-        """
-        song: the output from wavfile.read()
-        """
-        pred_song = PredictSong(song, self.num_hashes)
-        channel1 = song[:,0]
-        num_splits = np.ceil(len(channel1)/float(44100*self.window_length))
-        song_segments = np.array_split(channel1, num_splits)
-        streamer = pred_song.song_streamer(song_segments)
-
-        match = False
-        while not match:
-            fd, freq = streamer.next()
-            res = self.hash_it(fd, freq, test=True) # [(24,48,80,111,200), (11,111,200)]
-            for i, key in enumerate(res):
-                pred_song.counters[i] += Counter([elem[1] for elem in self.piu_hash[i][key]]) # running sum
-                pred_song.props[i] = {k: 1/sum(pred_song.counters[i].values()) for k,v in pred_song.counters[i].iteritems()} # proportion        
-                max_key = max(pred_song.props[i].iteritems(), key=operator.itemgetter(1))[0]
-                if pred_song.props[i][max_key] >= .8:
-                    print pred_song.props[i]
-                    return max_key
-            print 'No matches found'
-            return 0
-
 
     def print_hashes(self):
         for hash_num in range(self.num_hashes):
@@ -131,11 +143,8 @@ def main():
     piu = PiuHash(bins=[[30,40,80,120,180,300],[0, 100, 200, 300]])
     piu.hash_song(channel1, meta)
     piu.print_hashes()
-    blah = piu.predict(data)
-    print blah
+    pred = PredictSong(data, piu, 10)
+    pred.predict()
 
 if __name__ == '__main__':
     main()
-
-
-# this is Jack's comment
