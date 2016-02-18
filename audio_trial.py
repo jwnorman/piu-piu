@@ -31,7 +31,7 @@ class PiuHash(object):
         self.bins = [self.get_lit(bin_itr) for bin_itr in bins]
 
     def hash_song(self, channel=None, meta=""):
-        """ Hash one song
+        """ Hashes a song 
 
             channel: a list or numpy array of frequencies from a wav file
             meta: unique id of wav file
@@ -41,11 +41,10 @@ class PiuHash(object):
         for i, song_segment in enumerate(song_segments):
             fd = abs(np.fft.fft(song_segment))
             freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
-            self.hash_it(fd, freq, i, meta=meta)
+            self.hash_seg(fd, freq, i, meta=meta)
 
     def hash_dir(self, directory, channel = None, meta=""):
-        """
-        Read and hash each .wav song in the directory <dir>
+        """ Reads and hashes each .wav song in the directory <dir>
         """
         files = glob.glob(directory + "/*.wav")
         n = len(files)
@@ -59,7 +58,9 @@ class PiuHash(object):
             piu.hash_song(channel1, str(i))
 
 
-    def hash_it(self, fd, freq, i=None, test=False, meta=None):
+    def hash_seg(self, fd, freq, i=None, test=False, meta=None):
+        """ Hashes a fourier transformed segment of a song. 
+        """
         ret = list()
         for hash_num in range(self.num_hashes):
             hash_temp = tuple([self.argmax_frequency(fd, freq, bin_itr) for bin_itr in self.bins[hash_num]])
@@ -82,7 +83,7 @@ class PiuHash(object):
         match = False
         while not match:
             fd, freq = streamer.next()
-            res = self.hash_it(fd, freq, test=True) # [(24,48,80,111,200), (11,111,200)]
+            res = self.hash_seg(fd, freq, test=True) # [(24,48,80,111,200), (11,111,200)]
             for i, key in enumerate(res):
                 pred_song.counters[i] += Counter([elem[1] for elem in self.piu_hash[i][key]]) # running sum
                 pred_song.props[i] = {k: 1/sum(pred_song.counters[i].values()) for k,v in pred_song.counters[i].iteritems()} # proportion        
@@ -103,7 +104,7 @@ class PiuHash(object):
 
     @staticmethod
     def get_lit(bins):
-        """
+        """ Given a list of breakpoints it returns tuples of start,end of each bin.
         input: [30,40,80,120,180,300]
         output: [(30,40), (40,80), (80,120), (120,180), (180,300)]
         """
