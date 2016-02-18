@@ -21,24 +21,26 @@ with open('song_meta.tsv', 'w') as outfile:
 				           re.sub(r'[(),.-]', '',  \
 				           re.sub(r'\s', '_', filename)))).strip()
 
-			new_path = "/Users/ben/src/msan/adv_machineLearning/music_wav/" + new_filename
 
 			#clean the song name but preserve spaces () etc, just get rid of whitespace, .mp3,
 			#and random numbers that are appended to the front of some songs
 			orig = re.sub(r'^[-0-9]+', '', filename.strip(".mp3"))
 
 			#generating unique id for each song with uuid.uuid4()
-			_id = uuid.uuid4().hex]
+			_id = uuid.uuid4().hex
 			artist, album = root.split('/')[-2:] #arist, album last two levels of root path
 			song = orig.strip() 
 			format_song = new_filename.strip('.mp3') #converting to wav eventually, dont need .mp3 
 
-			meta = [_id, artist, album, song, format_song]
 
+			new_path = "/Users/ben/src/msan/adv_machineLearning/music_wav/" + format_song
+
+			meta = [_id, artist, album, song, format_song]
+			print meta
 			outfile.write('\t'.join(meta))
 			outfile.write('\n')
 
 			#code to move files initially, using this script to test formatting
-			# if song_path not in song_lst: # no dups
-			# 	shutil.move(song_path, new_path)
-			# 	song_lst[song_path] = True
+			if song_path not in song_lst: # no dups
+				shutil.move(song_path, new_path + '.wav')
+				song_lst[song_path] = True
