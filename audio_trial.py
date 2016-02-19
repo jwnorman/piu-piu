@@ -13,7 +13,7 @@ import shutil
 import uuid
 import pipes
 import sounddevice as sd
-#%matplotlib inline
+
 
 class PredictSong(object):
     def __init__(self, song, piu_hash_obj):
@@ -29,7 +29,7 @@ class PredictSong(object):
     @staticmethod
     def get_fft(song_segment):
         fd = abs(np.fft.fft(song_segment))
-        freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
+        freq = abs(np.fft.fftfreq(len(fd), 1/float(44100))) # we may want to consider soft coding this
         return fd, freq
 
     def predict(self):
@@ -73,6 +73,7 @@ class PredictSong(object):
         #print 'No matches found'
         return False
 
+
 class PiuHash(object):
     def __init__(self, window_length=1, bins=[[30,40,80,120,180,300]]):
         self.num_hashes = len(bins)
@@ -108,12 +109,10 @@ class PiuHash(object):
                 artist, album = root.split('/')[-2:] #arist, album last two levels of root path
                 song = orig.strip() # 'displayable' song #converting to wav eventually, dont need .mp3 
 
-                meta = {'artist': artist, 'album':album,'song': song}
+                meta = {'artist': artist, 'album':album, 'song': song}
                 self.meta[_id] = meta
                 self.hash_song(new_filename, _id, meta)
                 os.remove(new_filename)
-
-
 
     def hash_song(self, filename, uuid, meta=""):
         """ Hash one song
@@ -130,7 +129,7 @@ class PiuHash(object):
         song_segments = np.array_split(channel, num_splits)
         for song_segment in song_segments:
             fd = abs(np.fft.fft(song_segment))
-            freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
+            freq = abs(np.fft.fftfreq(len(fd), 1/float(44100))) # we may want to consider soft coding this
             self.hash_segment(fd, freq, uuid, meta=meta)
 
     def hash_segment(self, fd, freq, uuid=None, test=False, meta=None):
@@ -165,6 +164,7 @@ class PiuHash(object):
         relative_argmax = np.argmax(fd[bin_itr[0]:bin_itr[1]])
         return int(freq[bin_itr[0] + relative_argmax])
 
+
 def main():
     try:
         fs, data = wavfile.read("/Users/gab/Documents/MSAN/ML2/classy.wav")
@@ -173,7 +173,7 @@ def main():
             fs, data = wavfile.read("/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/el_nino.wav")
         except:
             fs, data = wavfile.read("/Users/ben/src/msan/adv_machineLearning/music_wav/el_nino.wav")
-    channel1 = data[:,0]
+    channel1 = data[:, 0]
     meta = 'ARTIST_SONG_ID'
 
     piu = PiuHash(bins=[[30,40,80,120,180,300],[0, 100, 200, 300]])
