@@ -11,6 +11,7 @@ import fnmatch
 import os, re
 import shutil
 import uuid
+import pipes
 #%matplotlib inline
 
 class PredictSong(object):
@@ -94,13 +95,13 @@ class PiuHash(object):
 
                 song_path = os.path.join(root, filename) #make full accessible path
                 formatted_path = os.path.join(root, re.sub(' ', '', filename))
-                shutil.copy(song_path, os.path.join(root, formatted_path))
+                shutil.move(song_path, os.path.join(root, formatted_path))
 
                 new_filename = _id + '.wav'
 
                 print 'converting {} to {}'.format(formatted_path, new_filename)
                 #convert to wav and save as <uuid>.wav
-                os.system('ffmpeg -i {} {}'.format(formatted_path, new_filename))
+                os.system('ffmpeg -i {} {}'.format(pipes.quote(formatted_path), new_filename))
                 #clean the song name but preserve spaces () etc, just get rid of whitespace, .mp3,
                 #and random numbers that are appended to the front of some songs
                 orig = re.sub(r'^[-0-9]+', '', filename.strip('.*'))
@@ -110,12 +111,11 @@ class PiuHash(object):
                 meta = {'artist': artist, 'album':album,'song': song}
                 self.meta[_id] = meta
                 self.hash_song(new_filename, _id, meta)
-                os.system('rm {}'.format(new_filename))
-                os.system('rm {}'.format(os.path.join(root, formatted_path)))
+                os.remove(new_filename)
 
                 i += 1
 
-    def hash_song(self, filename, uuid, channel=None, meta=""):
+    def hash_song(self, filename, uuid,  meta=""):
         """ Hash one song
 
             channel: a list or numpy array of frequencies from a wav file
@@ -128,14 +128,14 @@ class PiuHash(object):
         for song_segment in song_segments:
             fd = abs(np.fft.fft(song_segment))
             freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
-            self.hash_segment(fd, freq, i, meta=meta)
+            self.hash_segment(fd, freq, uuid, meta=meta)
 
-    def hash_segment(self, fd, freq, i=None, test=False, meta=None):
+    def hash_segment(self, fd, freq, uuid=None, test=False, meta=None):
         ret = list()
         for hash_num in range(self.num_hashes):
             hash_temp = tuple([self.argmax_frequency(fd, freq, bin_itr) for bin_itr in self.bins[hash_num]])
             if not test: # building
-                self.piu_hash[hash_num][hash_temp].append([i, meta])
+                self.piu_hash[hash_num][hash_temp].append([uuid, meta])
             else: # testing
                 ret.append(hash_temp)
         if test: return ret
