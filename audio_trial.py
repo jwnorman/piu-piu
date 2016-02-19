@@ -130,7 +130,7 @@ class PiuHash(object):
                 artist, album = root.split('/')[-2:]
                 song = orig.strip()
 
-                meta = {'artist': artist, 'album':album,'song': song}
+                meta = {'artist': artist, 'album':album, 'song': song}
                 self.meta[_id] = meta
                 self.print_hashes()
                 self.hash_song(new_filename, _id, meta)
