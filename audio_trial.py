@@ -12,6 +12,7 @@ import os, re
 import shutil
 import uuid
 import pipes
+import sounddevice as sd
 #%matplotlib inline
 
 class PredictSong(object):
@@ -83,8 +84,7 @@ class PiuHash(object):
     def convert_and_load_songs(self, directory, filter_by= ''):
         for root, dirnames, filenames in os.walk(directory):
             leaves = fnmatch.filter(filenames, "*" + filter_by)
-            i = 1
-            for filename in leaves: #only look at .mp3s for noe
+            for i, filename in enumerate(leaves): #only look at .mp3s for noe
                 if re.match('.DS', filename):
                     continue
                 #display progress
@@ -113,16 +113,19 @@ class PiuHash(object):
                 self.hash_song(new_filename, _id, meta)
                 os.remove(new_filename)
 
-                i += 1
 
-    def hash_song(self, filename, uuid,  meta=""):
+
+    def hash_song(self, filename, uuid, meta=""):
         """ Hash one song
 
             channel: a list or numpy array of frequencies from a wav file
             meta: unique id of wav file
         """
         fs, data = wavfile.read(filename)
-        channel = data[:,0]
+        try:
+            channel = data[:,0]
+        except:
+            channel = data
         num_splits = np.ceil(len(channel)/float(44100*self.window_length))
         song_segments = np.array_split(channel, num_splits)
         for song_segment in song_segments:
