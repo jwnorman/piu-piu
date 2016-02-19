@@ -7,6 +7,10 @@ import seaborn
 import operator
 import glob
 import sys
+import fnmatch
+import os, re
+import shutil
+import uuid
 #%matplotlib inline
 
 class PredictSong(object):
@@ -17,10 +21,6 @@ class PredictSong(object):
         self.counters = [Counter() for i in range(num_predictions)]
         self.props = [Counter() for i in range(num_predictions)]
         
-        
-
-
-
     def song_streamer(self, song_segments):
         for i, song_segment in enumerate(song_segments):
             yield self.get_fft(song_segment)
@@ -71,29 +71,63 @@ class PiuHash(object):
         self.piu_hash = [defaultdict(list) for i in xrange(self.num_hashes)]
         self.window_length = window_length
         self.bins = [self.get_lit(bin_itr) for bin_itr in bins]
-
-        #hard coding meta data, using 771 songs as train set
         self.meta = {}
-        with open('song_meta.tsv') as table:
-            headers = table.readline() #ignore first line
-            for line in table:
-                _id, artist, album, song, format_song = line.split('\t')
-                self.meta[_id] = {'artist': artist, 'album':album,\
-                                  'song': song, 'format_song':format_song}
-                                  
+  
 
-    def hash_song(self, channel=None, meta=""):
+
+    def convert_and_load_songs(self, directory, filter_by= ''):
+        for root, dirnames, filenames in os.walk(directory):
+            leaves = fnmatch.filter(filenames, "*" + filter_by)
+            i = 1
+            for filename in leaves: #only look at .mp3s for noe
+                if re.match('.DS', filename):
+                    continue
+                #display progress
+                sys.stdout.write('\r%d' % (i))
+                sys.stdout.flush()
+                #create unique id 
+                _id = uuid.uuid4().hex
+
+                song_path = os.path.join(root, filename) #make full accessible path
+                formatted_path = os.path.join(root, re.sub(' ', '', filename))
+                shutil.copy(song_path, os.path.join(root, formatted_path))
+
+                new_filename = _id + '.wav'
+
+                print 'converting {} to {}'.format(formatted_path, new_filename)
+                #convert to wav and save as <uuid>.wav
+                os.system('ffmpeg -i {} {}'.format(formatted_path, new_filename))
+                #clean the song name but preserve spaces () etc, just get rid of whitespace, .mp3,
+                #and random numbers that are appended to the front of some songs
+                orig = re.sub(r'^[-0-9]+', '', filename.strip('.*'))
+                artist, album = root.split('/')[-2:] #arist, album last two levels of root path
+                song = orig.strip() # 'displayable' song #converting to wav eventually, dont need .mp3 
+
+                meta = {'artist': artist, 'album':album,'song': song}
+                self.meta[_id] = meta
+                self.hash_song(new_filename, _id, meta)
+                os.system('rm {}'.format(new_filename))
+                os.system('rm {}'.format(os.path.join(root, formatted_path)))
+
+                i += 1
+                
+
+
+
+    def hash_song(self, filename, uuid, channel=None, meta=""):
         """ Hash one song
 
             channel: a list or numpy array of frequencies from a wav file
             meta: unique id of wav file
         """
+        fs, data = wavfile.read(filename)
+        channel = data[:,0]
         num_splits = np.ceil(len(channel)/float(44100*self.window_length))
         song_segments = np.array_split(channel, num_splits)
-        for i, song_segment in enumerate(song_segments):
+        for song_segment in song_segments:
             fd = abs(np.fft.fft(song_segment))
             freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
-            self.hash_it(fd, freq, i, meta=meta)
+            self.hash_it(fd, freq, uuid, meta=meta)
 
     def hash_dir(self, directory, channel = None, meta=""):
         """
@@ -163,4 +197,5 @@ def main():
     pred.predict()
 
 if __name__ == '__main__':
-    main()
+    pass
+    #main()
