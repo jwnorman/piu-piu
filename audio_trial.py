@@ -10,16 +10,11 @@ import sys
 #%matplotlib inline
 
 class PredictSong(object):
-    def __init__(self, song, piu_hash_obj, num_predictions):
+    def __init__(self, song, piu_hash_obj):
         self.song = song
         self.piu_hash_obj = piu_hash_obj
-        self.num_predictions = num_predictions
-        self.counters = [Counter() for i in range(num_predictions)]
-        self.props = [Counter() for i in range(num_predictions)]
-        
-        
-
-
+        self.counters = [Counter() for i in range(piu_hash_obj.num_hashes)]
+        self.props = [Counter() for i in range(piu_hash_obj.num_hashes)]
 
     def song_streamer(self, song_segments):
         for i, song_segment in enumerate(song_segments):
@@ -40,29 +35,36 @@ class PredictSong(object):
         song_segments = np.array_split(channel1, num_splits)
         streamer = self.song_streamer(song_segments)
         match = False
+        itr_num = 1
         while not match:
             try:
                 fd, freq = streamer.next()
             except StopIteration as e:
                 return 0
-            match = self.predict_iteration(fd, freq)
+            match = self.predict_iteration(fd, freq, itr_num)
+            itr_num += 1
     
-    def predict_iteration(self, fd, freq):
-        res = self.piu_hash_obj.hash_it(fd, freq, test=True) # [(24,48,80,111,200), (11,111,200)]
-        print res
+    def predict_iteration(self, fd, freq, itr_num):
+        res = self.piu_hash_obj.hash_segment(fd, freq, test=True) # [(24,48,80,111,200), (11,111,200)]
+        print 'res: ' + str(res)
+        print 'itr_num: ' + str(itr_num)
         for i, key in enumerate(res):
-            self.counters[i] += Counter([elem[1] for elem in self.piu_hash_obj.piu_hash[i][key]]) # running sum
-            self.props[i] = {k: 1/sum(self.counters[i].values()) for k,v in self.counters[i].iteritems()} # proportion
-            print self.piu_hash_obj.piu_hash[i][key]
-            print i, key
-            print self.counters
-            print self.props
-            print ''
-            max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
-            if self.props[i][max_key] >= .8:
-                print self.props[i]
-                return max_key
-        print 'No matches found'
+            print 'blah: ' + str(len(self.piu_hash_obj.piu_hash[i][key]))
+            if len(self.piu_hash_obj.piu_hash[i][key]) > 0:
+                print '\tblah: ' + str(len(self.piu_hash_obj.piu_hash[i][key]))
+                self.counters[i] += Counter([elem[1] for elem in self.piu_hash_obj.piu_hash[i][key]]) # running sum
+                self.props[i] = {k: self.counters[i][k]/sum(self.counters[i].values()) for k,v in self.counters[i].iteritems()} # proportion
+                print '\t' + 'counters: ' + str(self.counters)
+                print '\t' + 'proportions: ' + str(self.props)
+                max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
+                print ''
+                if (self.props[i][max_key] >= .8) and (itr_num >= 5):
+                    print '\t' + 'success'
+                    print '\t\t' + 'proportions: ' + str(self.props[i])
+                    print '\t\t' + 'max_key: ' + str(max_key)
+                    print ''
+                    return max_key
+        #print 'No matches found'
         return False
 
 class PiuHash(object):
@@ -72,15 +74,19 @@ class PiuHash(object):
         self.window_length = window_length
         self.bins = [self.get_lit(bin_itr) for bin_itr in bins]
 
-        #hard coding meta data, using 771 songs as train set
-        self.meta = {}
-        with open('song_meta.tsv') as table:
-            headers = table.readline() #ignore first line
-            for line in table:
-                _id, artist, album, song, format_song = line.split('\t')
-                self.meta[_id] = {'artist': artist, 'album':album,\
-                                  'song': song, 'format_song':format_song}
-                                  
+    def hash_dir(self, directory, channel = None, meta=""):
+        """
+        Read and hash each .wav song in the directory <dir>
+        """
+        files = glob.glob(directory + "*.wav")
+        n = len(files)
+        for i, filename in enumerate(files):
+            print filename
+            sys.stdout.write('%.2f%%\r' % (i / n * 100))
+            sys.stdout.flush()
+            fs, data = wavfile.read(filename)
+            channel1 = data[:,0]
+            self.hash_song(channel1, str(i))        
 
     def hash_song(self, channel=None, meta=""):
         """ Hash one song
@@ -93,25 +99,9 @@ class PiuHash(object):
         for i, song_segment in enumerate(song_segments):
             fd = abs(np.fft.fft(song_segment))
             freq = abs(np.fft.fftfreq(len(fd),1/float(44100))) # we may want to consider soft coding this
-            self.hash_it(fd, freq, i, meta=meta)
+            self.hash_segment(fd, freq, i, meta=meta)
 
-    def hash_dir(self, directory, channel = None, meta=""):
-        """
-        Read and hash each .wav song in the directory <dir>
-        """
-        files = glob.glob(directory + "*.wav")
-        n = len(files)
-        i = 1
-        for filename in files:
-            print filename
-            sys.stdout.write('%.2f%%\r' % (i / n * 100))
-            sys.stdout.flush()
-            i += 1
-            fs, data = wavfile.read(filename)
-            channel1 = data[:,0]
-            self.hash_song(channel1, str(i))
-
-    def hash_it(self, fd, freq, i=None, test=False, meta=None):
+    def hash_segment(self, fd, freq, i=None, test=False, meta=None):
         ret = list()
         for hash_num in range(self.num_hashes):
             hash_temp = tuple([self.argmax_frequency(fd, freq, bin_itr) for bin_itr in self.bins[hash_num]])
@@ -142,8 +132,6 @@ class PiuHash(object):
     def argmax_frequency(fd, freq, bin_itr):
         relative_argmax = np.argmax(fd[bin_itr[0]:bin_itr[1]])
         return int(freq[bin_itr[0] + relative_argmax])
-
-
 
 def main():
     try:
