@@ -62,23 +62,29 @@ class PredictSong(object):
         streamer = self.song_streamer(song_segments)
         match = False
         itr_num = 1
-        while itr_num < 200:#not match:
+        while itr_num < 1000:#not match:
             try:
                 fd, freq = streamer.next()
             except StopIteration as e:
                 pass
-            print itr_num
-            match = self.predict_iteration(fd, freq, itr_num)
+            match= self.predict_iteration(fd, freq, itr_num)
             itr_num += 1
-        return match
+            if match:
+                return match
+        # plt.plot(p_lst)
+        # plt.show()
+        # plt.plot(c_lst)
+        # plt.show()
+        return False
     
     def predict_iteration(self, fd, freq, itr_num):
         """
         Takes fft info and checks train hashes, updating 
         counter for the test instance
         """
+        # prop_lst = []
+        # count_lst = []
         res = self.piu_hash_obj.hash_segment(fd, freq, test=True)
-        results = []
         for i, key in enumerate(res):
             if len(self.piu_hash_obj.piu_hash[i][key]) > 0:
                 self.counters[i] += Counter([elem[0] \
@@ -86,13 +92,14 @@ class PredictSong(object):
                 self.props[i] = {k: self.counters[i][k]/sum(self.counters[i].values()) \
                                     for k,v in self.counters[i].iteritems()} # proportion
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
-                print '\n\n', itr_num, self.piu_hash_obj.piu_hash[i][key]
-                print self.props[i][max_key]
-                if (self.props[i][max_key] >= .8) and (itr_num >= 100):
-                    results.append(max_key)
-        if results == []:
-            return False
-        return results
+                try:
+                    print self.props[i]['660e0e791dd44b9f80c6c143b3c75f8f'], itr_num
+                except:
+                    pass
+                #print self.counters[i], itr_num, max_key, self.counters[i][max_key]
+                if (self.props[i][max_key] >= .33) and (itr_num >= 10):
+                    return max_key
+        return False
 
 
 class PiuHash(object):
@@ -220,6 +227,30 @@ if __name__ == '__main__':
     fs, data = wavfile.read('./wav_songs/ae4f47c42abf4150bfcf63376742e87d.wav')
 
     P = PredictSong(data, piu)
+
+
+    def test_predict():
+        results = []
+        song_lst = glob.glob('./wav_songs/*')
+        n, i = len(song_lst), 1
+        for f in song_lst:
+            sys.stdout.write('\r{}'.format(i/n))
+            sys.stdout.flush()
+            i += 1
+
+            #grab only uuid from path
+            uuid = f.split('/')[-1].strip('.wav')
+            fs, data = wavfile.read(f)
+            pred = PredictSong(data, piu).predict()
+            results.append((pred == uuid))
+        return results
+
+        fs, data  = wavfile('')
+
+
+
+
+
 
 
 
