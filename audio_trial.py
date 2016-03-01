@@ -25,6 +25,35 @@ import pickle
 __author__ = "Gabby Corbett, Ben Miroglio, Jack Norman"
 
 
+class StreamSong(object):
+    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=10):
+        self.samplerate = samplerate
+        self.timeout_limit = timeout_limit
+        self.timeout_counter = 1
+        self.timeout_flag = False
+        self.finished_flag = False
+        self.predictions = PredictSong(None, piu_hash_obj)
+
+    def callback(self, indata, frames, time, status):
+        song_segment = indata[:,0]
+        fd, freq = self.predictions.get_fft(song_segment)
+        self.finished_flag = self.predictions.predict_iteration(fd, freq, self.timeout_counter)
+        if self.timeout_counter == self.timeout_limit:
+            self.timeout_flag = True
+        else:
+            self.timeout_counter += 1
+        
+    def stream(self):
+        sdis = sd.InputStream(channels=2,
+            blocksize=44100,
+            samplerate=self.samplerate,
+            callback=self.callback)
+        sdis.start()
+        while (not self.timeout_flag) and (not self.finished_flag):
+            pass
+        sdis.stop()
+
+
 class PredictSong(object):
     def __init__(self, song, piu_hash_obj, threshold=.8):
         self.song = song
@@ -256,7 +285,9 @@ if __name__ == '__main__':
         return results
 
 
-
+    # code to stream/record a song
+    test = StreamSong(piu_hash_obj=piu, timeout_limit=7)
+    test.stream()
 
 
 
