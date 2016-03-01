@@ -19,20 +19,21 @@ import re
 import shutil
 import uuid
 import pipes
-# import sounddevice as sd
+import sounddevice as sd
 import pickle
 
 __author__ = "Gabby Corbett, Ben Miroglio, Jack Norman"
 
 
 class StreamSong(object):
-    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=10):
+    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=10, threshold=.7):
         self.samplerate = samplerate
         self.timeout_limit = timeout_limit
         self.timeout_counter = 1
         self.timeout_flag = False
         self.finished_flag = False
-        self.predictions = PredictSong(None, piu_hash_obj)
+        self.threshold = threshold
+        self.predictions = PredictSong(None, piu_hash_obj, threshold=self.threshold)
 
     def callback(self, indata, frames, time, status):
         song_segment = indata[:,0]
@@ -93,7 +94,7 @@ class PredictSong(object):
         match = False
         itr_num = 1
         while itr_num < 30:#not match:
-            print 'num_iter', itr_num
+            # print 'num_iter', itr_num
             try:
                 fd, freq = streamer.next()
             except StopIteration as e:
@@ -117,7 +118,7 @@ class PredictSong(object):
         # count_lst = []
         res = self.piu_hash_obj.hash_segment(fd, freq, test=True)
         for i, key in enumerate(res):
-            print 'hash', i
+            # print 'hash', i
             if len(self.piu_hash_obj.piu_hash[i][key]) > 0:
                 self.counters[i] += Counter([elem[0] \
                                     for elem in self.piu_hash_obj.piu_hash[i][key]]) # running sum
@@ -129,7 +130,7 @@ class PredictSong(object):
                 # except:
                 #     pass
                 #print self.counters[i], itr_num, max_key, self.counters[i][max_key]
-                print max_key, self.props[i][max_key]
+                # print max_key, self.props[i][max_key]
                 if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
                     return max_key
         return False
@@ -286,8 +287,7 @@ if __name__ == '__main__':
 
 
     # code to stream/record a song
-    test = StreamSong(piu_hash_obj=piu, timeout_limit=7)
-    test.stream()
+    
 
 
 
