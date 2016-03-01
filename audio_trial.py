@@ -26,11 +26,12 @@ __author__ = "Gabby Corbett, Ben Miroglio, Jack Norman"
 
 
 class PredictSong(object):
-    def __init__(self, song, piu_hash_obj):
+    def __init__(self, song, piu_hash_obj, threshold=.8):
         self.song = song
         self.piu_hash_obj = piu_hash_obj
         self.counters = [Counter() for i in range(piu_hash_obj.num_hashes)]
         self.props = [Counter() for i in range(piu_hash_obj.num_hashes)]
+        self.threshold = threshold
 
     def song_streamer(self, song_segments):
         """
@@ -62,7 +63,8 @@ class PredictSong(object):
         streamer = self.song_streamer(song_segments)
         match = False
         itr_num = 1
-        while itr_num < 1000:#not match:
+        while itr_num < 30:#not match:
+            print 'num_iter', itr_num
             try:
                 fd, freq = streamer.next()
             except StopIteration as e:
@@ -86,18 +88,20 @@ class PredictSong(object):
         # count_lst = []
         res = self.piu_hash_obj.hash_segment(fd, freq, test=True)
         for i, key in enumerate(res):
+            print 'hash', i
             if len(self.piu_hash_obj.piu_hash[i][key]) > 0:
                 self.counters[i] += Counter([elem[0] \
                                     for elem in self.piu_hash_obj.piu_hash[i][key]]) # running sum
                 self.props[i] = {k: self.counters[i][k]/sum(self.counters[i].values()) \
                                     for k,v in self.counters[i].iteritems()} # proportion
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
-                try:
-                    print self.props[i]['660e0e791dd44b9f80c6c143b3c75f8f'], itr_num
-                except:
-                    pass
+                # try:
+                #     print self.props[i]['660e0e791dd44b9f80c6c143b3c75f8f'], itr_num
+                # except:
+                #     pass
                 #print self.counters[i], itr_num, max_key, self.counters[i][max_key]
-                if (self.props[i][max_key] >= .33) and (itr_num >= 10):
+                print max_key, self.props[i][max_key]
+                if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
                     return max_key
         return False
 
@@ -163,15 +167,21 @@ class PiuHash(object):
         """
         fs, data = wavfile.read(filename)
         try:
-            channel = data[:,0]
+            channel0 = data[:,0]
         except:
-            channel = data
-        num_splits = np.ceil(len(channel)/float(44100*self.window_length))
-        song_segments = np.array_split(channel, num_splits)
-        for song_segment in song_segments:
-            fd = abs(np.fft.fft(song_segment))
-            freq = abs(np.fft.fftfreq(len(fd), 1/float(44100)))
-            self.hash_segment(fd, freq, uuid, meta=meta)
+            channel0 = data
+
+        # create 3 different windows, starting at begining of song, 1/3 into first second, 
+        # and 2/3 into first second -- creates 3 overlapping windows
+        windows = [channel0, channel0[int(44100/3):], channel0[int(44100/3)*2:]]
+
+        for channel in windows:
+            num_splits = np.ceil(len(channel)/float(44100*self.window_length))
+            song_segments = np.array_split(channel, num_splits)
+            for song_segment in song_segments:
+                fd = abs(np.fft.fft(song_segment))
+                freq = abs(np.fft.fftfreq(len(fd), 1/float(44100)))
+                self.hash_segment(fd, freq, uuid, meta=meta)
 
     def hash_segment(self, fd, freq, uuid=None, test=False, meta=None):
         """helper function for hash_song"""
@@ -218,15 +228,15 @@ if __name__ == '__main__':
                [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
                [0, 100, 200, 400, 800, 1600, 3000]]
     piu = PiuHash(bins=buckets)
-    h = open('phash', 'r')
-    m = open('pmeta', 'r')
+    h = open('wav_songs_10/phash', 'r')
+    m = open('wav_songs_10/pmeta', 'r')
 
     piu.piu_hash = pickle.load(h)
     piu.meta = pickle.load(m)
 
-    fs, data = wavfile.read('./wav_songs/ae4f47c42abf4150bfcf63376742e87d.wav')
+    # fs, data = wavfile.read('./wav_songs/ae4f47c42abf4150bfcf63376742e87d.wav')
 
-    P = PredictSong(data, piu)
+    # P = PredictSong(data, piu)
 
 
     def test_predict():
@@ -245,7 +255,6 @@ if __name__ == '__main__':
             results.append((pred == uuid))
         return results
 
-        fs, data  = wavfile('')
 
 
 
@@ -258,4 +267,4 @@ if __name__ == '__main__':
 
 
 
-    #piu.convert_and_load_songs('/Users/ben/Desktop/Orig_songs/Music/', filter_by='.mp3')
+    # piu.convert_and_load_songs('/Users/ben/Desktop/Orig_songs/Music/', filter_by='.mp3')
