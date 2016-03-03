@@ -8,14 +8,15 @@ from __future__ import division
 from scipy.io import wavfile
 import numpy as np
 from collections import defaultdict, Counter
-# import matplotlib.pyplot as plt
-# import seaborn
+import matplotlib.pyplot as plt
+import seaborn
 import operator
 import glob
 import sys
 import fnmatch
 import os
 import re
+import time
 import shutil
 import uuid
 import pipes
@@ -25,19 +26,32 @@ import pickle
 __author__ = "Gabby Corbett, Ben Miroglio, Jack Norman"
 
 
+OYSTER = []
 class StreamSong(object):
-    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=10, threshold=.7):
+    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=30, threshold=.7,\
+                 viz = False, device=0):
         self.samplerate = samplerate
         self.timeout_limit = timeout_limit
         self.timeout_counter = 1
         self.timeout_flag = False
         self.finished_flag = False
         self.threshold = threshold
+        self.viz = viz
+        self.device = device
         self.predictions = PredictSong(None, piu_hash_obj, threshold=self.threshold)
 
+
     def callback(self, indata, frames, time, status):
+        # print self.timeout_counter
+        global OYSTER
         song_segment = indata[:,0]
+        OYSTER.extend(song_segment)
         fd, freq = self.predictions.get_fft(song_segment)
+        # if self.viz:
+        #     while not self.timeout_flag:
+        #         plt.plot(freq, abs(np.fft.fft(song_segment)))
+        #         plt.draw()
+        #         # plt.pause(.01)
         self.finished_flag = self.predictions.predict_iteration(fd, freq, self.timeout_counter)
         if self.timeout_counter == self.timeout_limit:
             self.timeout_flag = True
@@ -48,11 +62,15 @@ class StreamSong(object):
         sdis = sd.InputStream(channels=2,
             blocksize=44100,
             samplerate=self.samplerate,
-            callback=self.callback)
+            callback=self.callback, device = self.device)
+        # plt.axis([0, 1000, 0, 1000])
+        # plt.show()
         sdis.start()
         while (not self.timeout_flag) and (not self.finished_flag):
             pass
         sdis.stop()
+        return self.finished_flag
+
 
 
 class PredictSong(object):
@@ -94,7 +112,7 @@ class PredictSong(object):
         match = False
         itr_num = 1
         while itr_num < 30:#not match:
-            # print 'num_iter', itr_num
+            print 'num_iter', itr_num
             try:
                 fd, freq = streamer.next()
             except StopIteration as e:
@@ -124,13 +142,14 @@ class PredictSong(object):
                                     for elem in self.piu_hash_obj.piu_hash[i][key]]) # running sum
                 self.props[i] = {k: self.counters[i][k]/sum(self.counters[i].values()) \
                                     for k,v in self.counters[i].iteritems()} # proportion
+
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
                 # try:
                 #     print self.props[i]['660e0e791dd44b9f80c6c143b3c75f8f'], itr_num
                 # except:
                 #     pass
-                #print self.counters[i], itr_num, max_key, self.counters[i][max_key]
-                # print max_key, self.props[i][max_key]
+                # print self.counters[i], itr_num, max_key, self.counters[i][max_key]
+                print max_key, self.props[i][max_key], itr_num, i, sum(self.counters[i].values())
                 if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
                     return max_key
         return False
@@ -285,8 +304,8 @@ if __name__ == '__main__':
             results.append((pred == uuid))
         return results
 
+# testing live plotting
 
-    # code to stream/record a song
     
 
 
