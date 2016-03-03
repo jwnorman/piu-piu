@@ -70,10 +70,7 @@ class StreamSong(object):
             pass
         sdis.stop()
         return self.finished_flag
-<<<<<<< HEAD
 
-=======
->>>>>>> 8931c829086f6b1d0ce611385bfd1eef8d22bbec
 
 
 class PredictSong(object):
@@ -155,12 +152,11 @@ class PredictSong(object):
                 #     print self.props[i]['660e0e791dd44b9f80c6c143b3c75f8f'], itr_num
                 # except:
                 #     pass
-<<<<<<< HEAD
-                # print self.counters[i], itr_num, max_key, self.counters[i][max_key]
-                print max_key, self.props[i][max_key], itr_num, i, sum(self.counters[i].values())
-                if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
-                    return max_key
-=======
+
+                # # print self.counters[i], itr_num, max_key, self.counters[i][max_key]
+                # print max_key, self.props[i][max_key], itr_num, i, sum(self.counters[i].values())
+                # if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
+                #     return max_key
                 #print self.counters[i], itr_num, max_key, self.counters[i][max_key]
                 top = self.counters[i].most_common(2)
                 # if len(top) == 1 and top[0][1] >= 5:
@@ -198,7 +194,6 @@ class PredictSong(object):
                         return max_key
                 #if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
                 #    return max_key
->>>>>>> 8931c829086f6b1d0ce611385bfd1eef8d22bbec
         return False
 
 
