@@ -137,7 +137,7 @@ class PredictSong(object):
         # count_lst = []
         res = self.piu_hash_obj.hash_segment(fd, freq, test=True)
 
-        print 'Iteration Number:    ' + str(itr_num)
+        #print 'Iteration Number:    ' + str(itr_num)
         for i, key in enumerate(res):
             # print 'hash', i
             if len(self.piu_hash_obj.piu_hash[i][key]) > 0:
@@ -155,45 +155,45 @@ class PredictSong(object):
 
                 # # print self.counters[i], itr_num, max_key, self.counters[i][max_key]
                 # print max_key, self.props[i][max_key], itr_num, i, sum(self.counters[i].values())
-                # if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
-                #     return max_key
+                if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
+                    return max_key
                 #print self.counters[i], itr_num, max_key, self.counters[i][max_key]
-                top = self.counters[i].most_common(2)
-                # if len(top) == 1 and top[0][1] >= 5:
-                if len(top) == 1:
-                    print 'Hash number:     ' + str(i)
-                    print 'Inner iter num:  ' + str(self.hash_counter[i])
-                    print 'Num of buckets:  ' + str(len(key))
-                    print '1st most common: ' + str(top[0])
-                    print ''
-                    if top[0][1] >= 20:
-                        return max_key
-                if len(top) >= 2:
-                    #print top
-                    ratio = top[0][1]/float(top[1][1])
-                    #print max_key, self.props[i][max_key], ratio, i, sum(self.counters[i].values())
-                    #print top[0][1], top[1][1], ratio, i, sum(self.counters[i].values()), 5.0/sum(self.counters[i].values())+1
-                    #if (ratio > 5.0/sum(self.counters[i].values())+1) and (sum(self.counters[i].values()) > 5):
-                    #    return max_key
-                    x = float(sum(self.counters[i].values()))
-                    # magnitude = 5
-                    total_prop = top[0][1]/x
-                    magnitude = 10*(1-total_prop)
-                    threshold = -magnitude*np.arctan(x/10 - 2) + magnitude*np.pi/2 + 1.05
-                    print 'Hash number:     ' + str(i)
-                    print 'Inner iter num:  ' + str(self.hash_counter[i])
-                    print 'Num of buckets:  ' + str(len(key))
-                    print '1st most common: ' + str(top[0])
-                    print '2nd most common: ' + str(top[1])
-                    print 'All counts:      ' + str([self.counters[i].values()])
-                    print 'Ratio:           ' + str(ratio)
-                    print 'Sum:             ' + str(x)
-                    print 'Threshold:       ' + str(threshold)
-                    print ''
-                    if (ratio > threshold) and (self.hash_counter[i] >= 2): # and (top[0][1]/x > .2):
-                        return max_key
-                #if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
-                #    return max_key
+                # top = self.counters[i].most_common(2)
+                # # if len(top) == 1 and top[0][1] >= 5:
+                # if len(top) == 1:
+                #     print 'Hash number:     ' + str(i)
+                #     print 'Inner iter num:  ' + str(self.hash_counter[i])
+                #     print 'Num of buckets:  ' + str(len(key))
+                #     print '1st most common: ' + str(top[0])
+                #     print ''
+                #     if top[0][1] >= 20:
+                #         return max_key
+                # if len(top) >= 2:
+                #     #print top
+                #     ratio = top[0][1]/float(top[1][1])
+                #     #print max_key, self.props[i][max_key], ratio, i, sum(self.counters[i].values())
+                #     #print top[0][1], top[1][1], ratio, i, sum(self.counters[i].values()), 5.0/sum(self.counters[i].values())+1
+                #     #if (ratio > 5.0/sum(self.counters[i].values())+1) and (sum(self.counters[i].values()) > 5):
+                #     #    return max_key
+                #     x = float(sum(self.counters[i].values()))
+                #     # magnitude = 5
+                #     total_prop = top[0][1]/x
+                #     magnitude = 10*(1-total_prop)
+                #     threshold = -magnitude*np.arctan(x/10 - 2) + magnitude*np.pi/2 + 1.05
+                #     print 'Hash number:     ' + str(i)
+                #     print 'Inner iter num:  ' + str(self.hash_counter[i])
+                #     print 'Num of buckets:  ' + str(len(key))
+                #     print '1st most common: ' + str(top[0])
+                #     print '2nd most common: ' + str(top[1])
+                #     print 'All counts:      ' + str([self.counters[i].values()])
+                #     print 'Ratio:           ' + str(ratio)
+                #     print 'Sum:             ' + str(x)
+                #     print 'Threshold:       ' + str(threshold)
+                #     print ''
+                #     if (ratio > threshold) and (self.hash_counter[i] >= 2): # and (top[0][1]/x > .2):
+                #         return max_key
+                # #if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
+                # #    return max_key
         return False
 
 
