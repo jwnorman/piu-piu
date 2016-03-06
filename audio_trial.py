@@ -28,7 +28,7 @@ __author__ = "Gabby Corbett, Ben Miroglio, Jack Norman"
 #0909e304db644bdd848907f3149aaacc
 
 class StreamSong(object):
-    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=15, threshold=.8,\
+    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=15, threshold=.7,\
                  viz=False, device=0, truth=None):
         self.samplerate = samplerate
         self.timeout_limit = timeout_limit
