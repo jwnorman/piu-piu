@@ -8,14 +8,15 @@ from __future__ import division
 from scipy.io import wavfile
 import numpy as np
 from collections import defaultdict, Counter
-# import matplotlib.pyplot as plt
-# import seaborn
+import matplotlib.pyplot as plt
+import seaborn
 import operator
 import glob
 import sys
 import fnmatch
 import os
 import re
+import time
 import shutil
 import uuid
 import pipes
@@ -25,21 +26,34 @@ import pickle
 __author__ = "Gabby Corbett, Ben Miroglio, Jack Norman"
 
 #0909e304db644bdd848907f3149aaacc
+
 class StreamSong(object):
-    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=15, threshold=.7, truth=None):
+    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=15, threshold=.8,\
+                 viz=False, device=0, truth=None):
         self.samplerate = samplerate
         self.timeout_limit = timeout_limit
         self.timeout_counter = 1
         self.timeout_flag = False
         self.finished_flag = False
         self.threshold = threshold
+        self.viz = viz
+        self.device = device
         self.predictions = PredictSong(None, piu_hash_obj, threshold=self.threshold)
         self.truth = truth
 
+
     def callback(self, indata, frames, time, status):
+        # print self.timeout_counter
         song_segment = indata[:,0]
         fd, freq = self.predictions.get_fft(song_segment)
         self.finished_flag = self.predictions.predict_iteration(fd, freq, self.timeout_counter, self.truth)
+
+        # if self.viz:
+        #     while not self.timeout_flag:
+        #         plt.plot(freq, abs(np.fft.fft(song_segment)))
+        #         plt.draw()
+        #         # plt.pause(.01)
+
         if self.timeout_counter == self.timeout_limit:
             self.timeout_flag = True
         else:
@@ -50,7 +64,9 @@ class StreamSong(object):
             blocksize=44100,
             samplerate=self.samplerate,
             callback=self.callback,
-            device=0)
+            device = self.device)
+        # plt.axis([0, 1000, 0, 1000])
+        # plt.show()
         sdis.start()
         while (not self.timeout_flag): # and (not self.finished_flag):
             pass
@@ -58,6 +74,7 @@ class StreamSong(object):
         sdis = None
         print self.predictions.bin_results
         return self.finished_flag
+
 
 
 class PredictSong(object):
@@ -101,7 +118,7 @@ class PredictSong(object):
         match = False
         itr_num = 1
         while itr_num < 30:#not match:
-            # print 'num_iter', itr_num
+            print 'num_iter', itr_num
             try:
                 fd, freq = streamer.next()
             except StopIteration as e:
@@ -128,13 +145,13 @@ class PredictSong(object):
         print 'Iteration Number:    ' + str(itr_num)
         for i, key in enumerate(res):
             val = 0
-            # print 'hash', i
             if len(self.piu_hash_obj.piu_hash[i][key]) > 0:
                 self.hash_counter[i] += 1
                 self.counters[i] += Counter([elem[0] \
                                     for elem in self.piu_hash_obj.piu_hash[i][key]]) # running sum
                 self.props[i] = {k: self.counters[i][k]/sum(self.counters[i].values()) \
                                     for k,v in self.counters[i].iteritems()} # proportion
+
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
                 if (self.props[i][max_key] >= self.threshold): # and (self.hash_counter[i] >= 3):
                     if max_key == truth:
@@ -258,10 +275,6 @@ class PiuHash(object):
         relative_argmax = np.argmax(fd[bin_itr[0]:bin_itr[1]])
         return int(freq[bin_itr[0] + relative_argmax])
 
-
-
-    
-
 if __name__ == '__main__':
     buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
                [0, 350, 3000], np.arange(0, 3000, 100), [0, 200, 1000, 3000], \
@@ -300,17 +313,6 @@ if __name__ == '__main__':
             results.append((pred == uuid))
         return results
 
+# testing live plotting
 
-    # code to stream/record a song
-    
-
-
-
-
-
-
-
-
-
-
-    # piu.convert_and_load_songs('/Users/ben/Desktop/Orig_songs/Music/', filter_by='.mp3')
+# piu.convert_and_load_songs('/Users/ben/Desktop/Orig_songs/Music/', filter_by='.mp3')
