@@ -68,11 +68,11 @@ class StreamSong(object):
         # plt.axis([0, 1000, 0, 1000])
         # plt.show()
         sdis.start()
-        while (not self.timeout_flag): # and (not self.finished_flag):
+        while (not self.timeout_flag) and (not self.finished_flag):
             pass
         sdis.stop()
-        sdis = None
-        print self.predictions.bin_results
+        #sdis = None
+        #print self.predictions.bin_results
         return self.finished_flag
 
 
@@ -154,13 +154,15 @@ class PredictSong(object):
 
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
                 if (self.props[i][max_key] >= self.threshold): # and (self.hash_counter[i] >= 3):
+                    return max_key
+                    # this is only for binning checks:
                     if max_key == truth:
                         val = 1
                     if (max_key != truth):
                         val = -1
             self.bin_results[i][val] += 1
         #return self.bin_results
-        #return False
+        return False
 
 
 class PiuHash(object):
@@ -285,6 +287,7 @@ buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
            np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
            [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
 piu = pickle.load(open('/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj.pkl', 'r'))
+
 
 @app.route('/')
 def home_page():
