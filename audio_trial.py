@@ -329,43 +329,43 @@ if __name__ == '__main__':
     # piu.hash_song('/Users/ben/Desktop/same_dir/same_ole_mistakes.wav', uuid = 'riri')
 
 
-if __name__ == '__main__':
-    buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
-               [0, 350, 3000], np.arange(0, 3000, 100), [0, 200, 1000, 3000], \
-               [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
-               [0, 100, 200, 400, 800, 1600, 3000]]
-    piu = PiuHash(bins=buckets)
-    try:
-        h = open('wav_songs_10/phash', 'r')
-        m = open('wav_songs_10/pmeta', 'r')
-    except:
-        print 'are we here'
-        h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/phash_new', 'r')
-        m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
+# if __name__ == '__main__':
+#     buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
+#                [0, 350, 3000], np.arange(0, 3000, 100), [0, 200, 1000, 3000], \
+#                [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
+#                [0, 100, 200, 400, 800, 1600, 3000]]
+#     piu = PiuHash(bins=buckets)
+#     try:
+#         h = open('wav_songs_10/phash', 'r')
+#         m = open('wav_songs_10/pmeta', 'r')
+#     except:
+#         print 'are we here'
+#         h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/phash_new', 'r')
+#         m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
 
-    piu.piu_hash = pickle.load(h)
-    piu.meta = pickle.load(m)
+#     piu.piu_hash = pickle.load(h)
+#     piu.meta = pickle.load(m)
 
-    # fs, data = wavfile.read('./wav_songs/ae4f47c42abf4150bfcf63376742e87d.wav')
+#     # fs, data = wavfile.read('./wav_songs/ae4f47c42abf4150bfcf63376742e87d.wav')
 
-    # P = PredictSong(data, piu)
+#     # P = PredictSong(data, piu)
 
 
-    def test_predict():
-        results = []
-        song_lst = glob.glob('./wav_songs/*')
-        n, i = len(song_lst), 1
-        for f in song_lst:
-            sys.stdout.write('\r{}'.format(i/n))
-            sys.stdout.flush()
-            i += 1
+#     def test_predict():
+#         results = []
+#         song_lst = glob.glob('./wav_songs/*')
+#         n, i = len(song_lst), 1
+#         for f in song_lst:
+#             sys.stdout.write('\r{}'.format(i/n))
+#             sys.stdout.flush()
+#             i += 1
 
-            #grab only uuid from path
-            uuid = f.split('/')[-1].strip('.wav')
-            fs, data = wavfile.read(f)
-            pred = PredictSong(data, piu).predict()
-            results.append((pred == uuid))
-        return results
+#             #grab only uuid from path
+#             uuid = f.split('/')[-1].strip('.wav')
+#             fs, data = wavfile.read(f)
+#             pred = PredictSong(data, piu).predict()
+#             results.append((pred == uuid))
+#         return results
 
 
 
