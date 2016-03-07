@@ -117,7 +117,8 @@ class PredictSong(object):
         streamer = self.song_streamer(song_segments)
         match = False
         itr_num = 1
-        while itr_num < 30:#not match:
+        while itr_num is not match:
+        # while itr_num < 30:#not match:
             print 'num_iter', itr_num
             try:
                 fd, freq = streamer.next()
@@ -276,17 +277,18 @@ class PiuHash(object):
         return int(freq[bin_itr[0] + relative_argmax])
 
 if __name__ == '__main__':
-    buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
-               [0, 350, 3000], np.arange(0, 3000, 100), [0, 200, 1000, 3000], \
-               [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
-               [0, 100, 200, 400, 800, 1600, 3000]]
-    piu = PiuHash(bins=buckets)
+    #buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
+    #           [0, 350, 3000], np.arange(0, 3000, 100), [0, 200, 1000, 3000], \
+    #           [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
+    #           [0, 100, 200, 400, 800, 1600, 3000]]
+    #piu = PiuHash(bins=buckets)
     try:
         h = open('wav_songs_10/phash', 'r')
         m = open('wav_songs_10/pmeta', 'r')
     except:
         print 'are we here'
-        h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/phash_new', 'r')
+        #h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/phash_new', 'r')
+        h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/piu_obj.pkl', 'r')
         m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
 
     piu.piu_hash = pickle.load(h)
