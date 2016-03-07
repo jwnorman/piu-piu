@@ -1,0 +1,4 @@
+*.ipynb_*
+phash*
+pmeta*
+riri/*

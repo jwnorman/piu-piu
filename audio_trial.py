@@ -25,11 +25,11 @@ import pickle
 
 __author__ = "Gabby Corbett, Ben Miroglio, Jack Norman"
 
+#0909e304db644bdd848907f3149aaacc
 
-OYSTER = []
 class StreamSong(object):
-    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=30, threshold=.7,\
-                 viz = False, device=0):
+    def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=15, threshold=.7,\
+                 viz=False, device=0, truth=None):
         self.samplerate = samplerate
         self.timeout_limit = timeout_limit
         self.timeout_counter = 1
@@ -39,20 +39,21 @@ class StreamSong(object):
         self.viz = viz
         self.device = device
         self.predictions = PredictSong(None, piu_hash_obj, threshold=self.threshold)
+        self.truth = truth
 
 
     def callback(self, indata, frames, time, status):
         # print self.timeout_counter
-        global OYSTER
         song_segment = indata[:,0]
-        OYSTER.extend(song_segment)
         fd, freq = self.predictions.get_fft(song_segment)
+        self.finished_flag = self.predictions.predict_iteration(fd, freq, self.timeout_counter, self.truth)
+
         # if self.viz:
         #     while not self.timeout_flag:
         #         plt.plot(freq, abs(np.fft.fft(song_segment)))
         #         plt.draw()
         #         # plt.pause(.01)
-        self.finished_flag = self.predictions.predict_iteration(fd, freq, self.timeout_counter)
+
         if self.timeout_counter == self.timeout_limit:
             self.timeout_flag = True
         else:
@@ -62,13 +63,16 @@ class StreamSong(object):
         sdis = sd.InputStream(channels=2,
             blocksize=44100,
             samplerate=self.samplerate,
-            callback=self.callback, device = self.device)
+            callback=self.callback,
+            device = self.device)
         # plt.axis([0, 1000, 0, 1000])
         # plt.show()
         sdis.start()
-        while (not self.timeout_flag) and (not self.finished_flag):
+        while (not self.timeout_flag): # and (not self.finished_flag):
             pass
         sdis.stop()
+        sdis = None
+        print self.predictions.bin_results
         return self.finished_flag
 
 
@@ -81,6 +85,7 @@ class PredictSong(object):
         self.props = [Counter() for i in range(piu_hash_obj.num_hashes)]
         self.hash_counter = Counter()
         self.threshold = threshold
+        self.bin_results = defaultdict(Counter)
 
     def song_streamer(self, song_segments):
         """
@@ -128,7 +133,7 @@ class PredictSong(object):
         # plt.show()
         return False
     
-    def predict_iteration(self, fd, freq, itr_num):
+    def predict_iteration(self, fd, freq, itr_num, truth=None):
         """
         Takes fft info and checks train hashes, updating 
         counter for the test instance
@@ -137,9 +142,9 @@ class PredictSong(object):
         # count_lst = []
         res = self.piu_hash_obj.hash_segment(fd, freq, test=True)
 
-        #print 'Iteration Number:    ' + str(itr_num)
+        print 'Iteration Number:    ' + str(itr_num)
         for i, key in enumerate(res):
-            # print 'hash', i
+            val = 0
             if len(self.piu_hash_obj.piu_hash[i][key]) > 0:
                 self.hash_counter[i] += 1
                 self.counters[i] += Counter([elem[0] \
@@ -148,53 +153,14 @@ class PredictSong(object):
                                     for k,v in self.counters[i].iteritems()} # proportion
 
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
-                # try:
-                #     print self.props[i]['660e0e791dd44b9f80c6c143b3c75f8f'], itr_num
-                # except:
-                #     pass
-
-                # # print self.counters[i], itr_num, max_key, self.counters[i][max_key]
-                # print max_key, self.props[i][max_key], itr_num, i, sum(self.counters[i].values())
-                if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
-                    return max_key
-                #print self.counters[i], itr_num, max_key, self.counters[i][max_key]
-                # top = self.counters[i].most_common(2)
-                # # if len(top) == 1 and top[0][1] >= 5:
-                # if len(top) == 1:
-                #     print 'Hash number:     ' + str(i)
-                #     print 'Inner iter num:  ' + str(self.hash_counter[i])
-                #     print 'Num of buckets:  ' + str(len(key))
-                #     print '1st most common: ' + str(top[0])
-                #     print ''
-                #     if top[0][1] >= 20:
-                #         return max_key
-                # if len(top) >= 2:
-                #     #print top
-                #     ratio = top[0][1]/float(top[1][1])
-                #     #print max_key, self.props[i][max_key], ratio, i, sum(self.counters[i].values())
-                #     #print top[0][1], top[1][1], ratio, i, sum(self.counters[i].values()), 5.0/sum(self.counters[i].values())+1
-                #     #if (ratio > 5.0/sum(self.counters[i].values())+1) and (sum(self.counters[i].values()) > 5):
-                #     #    return max_key
-                #     x = float(sum(self.counters[i].values()))
-                #     # magnitude = 5
-                #     total_prop = top[0][1]/x
-                #     magnitude = 10*(1-total_prop)
-                #     threshold = -magnitude*np.arctan(x/10 - 2) + magnitude*np.pi/2 + 1.05
-                #     print 'Hash number:     ' + str(i)
-                #     print 'Inner iter num:  ' + str(self.hash_counter[i])
-                #     print 'Num of buckets:  ' + str(len(key))
-                #     print '1st most common: ' + str(top[0])
-                #     print '2nd most common: ' + str(top[1])
-                #     print 'All counts:      ' + str([self.counters[i].values()])
-                #     print 'Ratio:           ' + str(ratio)
-                #     print 'Sum:             ' + str(x)
-                #     print 'Threshold:       ' + str(threshold)
-                #     print ''
-                #     if (ratio > threshold) and (self.hash_counter[i] >= 2): # and (top[0][1]/x > .2):
-                #         return max_key
-                # #if (self.props[i][max_key] >= self.threshold) and (itr_num >= 10):
-                # #    return max_key
-        return False
+                if (self.props[i][max_key] >= self.threshold): # and (self.hash_counter[i] >= 3):
+                    if max_key == truth:
+                        val = 1
+                    if (max_key != truth):
+                        val = -1
+            self.bin_results[i][val] += 1
+        #return self.bin_results
+        #return False
 
 
 class PiuHash(object):
@@ -310,6 +276,7 @@ class PiuHash(object):
         return int(freq[bin_itr[0] + relative_argmax])
 
 
+
 from flask import Flask
 
 app = Flask(__name__)
@@ -361,17 +328,45 @@ if __name__ == '__main__':
     # # load in rihanna
     # piu.hash_song('/Users/ben/Desktop/same_dir/same_ole_mistakes.wav', uuid = 'riri')
 
-#  
 
-    
+if __name__ == '__main__':
+    buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
+               [0, 350, 3000], np.arange(0, 3000, 100), [0, 200, 1000, 3000], \
+               [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
+               [0, 100, 200, 400, 800, 1600, 3000]]
+    piu = PiuHash(bins=buckets)
+    try:
+        h = open('wav_songs_10/phash', 'r')
+        m = open('wav_songs_10/pmeta', 'r')
+    except:
+        print 'are we here'
+        h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/phash_new', 'r')
+        m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
+
+    piu.piu_hash = pickle.load(h)
+    piu.meta = pickle.load(m)
+
+    # fs, data = wavfile.read('./wav_songs/ae4f47c42abf4150bfcf63376742e87d.wav')
+
+    # P = PredictSong(data, piu)
+
+
+    def test_predict():
+        results = []
+        song_lst = glob.glob('./wav_songs/*')
+        n, i = len(song_lst), 1
+        for f in song_lst:
+            sys.stdout.write('\r{}'.format(i/n))
+            sys.stdout.flush()
+            i += 1
+
+            #grab only uuid from path
+            uuid = f.split('/')[-1].strip('.wav')
+            fs, data = wavfile.read(f)
+            pred = PredictSong(data, piu).predict()
+            results.append((pred == uuid))
+        return results
 
 
 
-
-
-
-
-
-
-
-    # piu.convert_and_load_songs('/Users/ben/Desktop/Orig_songs/Music/', filter_by='.mp3')
+# piu.convert_and_load_songs('/Users/ben/Desktop/Orig_songs/Music/', filter_by='.mp3')
