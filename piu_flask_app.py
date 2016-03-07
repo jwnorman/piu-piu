@@ -2,7 +2,7 @@ from audio_trial import *
 from flask import Flask
 
 app = Flask(__name__)
-piu = pickle.load(open('/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj.pkl', 'r'))
+piu = pickle.load(open('/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj1.pkl', 'r'))
 
 @app.route('/')
 def home_page():
@@ -13,6 +13,7 @@ def pred():
     global piu
     S = StreamSong(piu)
     return S.stream()
+
 
 
 if __name__ == '__main__':

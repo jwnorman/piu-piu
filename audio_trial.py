@@ -29,7 +29,7 @@ __author__ = "Gabby Corbett, Ben Miroglio, Jack Norman"
 
 class StreamSong(object):
     def __init__(self, piu_hash_obj, samplerate=44100, timeout_limit=15, threshold=.7,\
-                 viz=False, device=0, truth=None):
+                 viz=False, device=0, truth=None, demo=False):
         self.samplerate = samplerate
         self.timeout_limit = timeout_limit
         self.timeout_counter = 1
@@ -38,7 +38,8 @@ class StreamSong(object):
         self.threshold = threshold
         self.viz = viz
         self.device = device
-        self.predictions = PredictSong(None, piu_hash_obj, threshold=self.threshold)
+        self.demo = demo
+        self.predictions = PredictSong(None, piu_hash_obj, threshold=self.threshold, demo=self.demo)
         self.truth = truth
 
 
@@ -46,7 +47,8 @@ class StreamSong(object):
         # print self.timeout_counter
         song_segment = indata[:,0]
         fd, freq = self.predictions.get_fft(song_segment)
-        self.finished_flag = self.predictions.predict_iteration(fd, freq, self.timeout_counter, self.truth)
+        self.finished_flag = self.predictions.predict_iteration(fd, freq, self.timeout_counter, \
+                                                                self.truth)
 
         # if self.viz:
         #     while not self.timeout_flag:
@@ -78,13 +80,14 @@ class StreamSong(object):
 
 
 class PredictSong(object):
-    def __init__(self, song, piu_hash_obj, threshold=.7):
+    def __init__(self, song, piu_hash_obj, threshold=.7, demo=False):
         self.song = song
         self.piu_hash_obj = piu_hash_obj
         self.counters = [Counter() for i in range(piu_hash_obj.num_hashes)]
         self.props = [Counter() for i in range(piu_hash_obj.num_hashes)]
         self.hash_counter = Counter()
         self.threshold = threshold
+        self.demo = demo
         self.bin_results = defaultdict(Counter)
 
     def song_streamer(self, song_segments):
@@ -161,6 +164,11 @@ class PredictSong(object):
                             if (max_key != truth):
                                 val = -1
                     else:
+                        if self.demo:
+                            try:
+                                return self.piu_hash_obj.meta[max_key]
+                            except KeyError:
+                                return max_key
                         return max_key
             self.bin_results[i][val] += 1
         if truth is not None:
@@ -252,6 +260,7 @@ class PiuHash(object):
                                 for bin_itr in self.bins[hash_num]])
             if not test: # building
                 self.piu_hash[hash_num][hash_temp].append([uuid, meta])
+                self.meta[uuid] = meta
             else: # testing
                 ret.append(hash_temp)
         if test: return ret
@@ -280,24 +289,38 @@ class PiuHash(object):
         return int(freq[bin_itr[0] + relative_argmax])
 
 
+def load_new_song(song_path, uuid, meta, 
+                  piu_path ='/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj.pkl'):
+    '''
+    Loads a new song into the Hash and Meta attributes of the pickled piu
+    object stored in <piu_path> and rewrites the obj to a pickle with the updated
+    data
+    '''
+    piu = pickle.load(open(piu_path, 'r'))
+    piu.hash_song(song_path, 
+                  uuid = 'riri', 
+                  meta = meta)
+    pickle.dump(piu, open(song_path, 'w'))
+
+
+
+
+
 if __name__ == '__main__':
-    piu = pickle.load(open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/piu_obj.pkl', 'r'))
+    PATH =  '/Users/ben/Desktop/same_dir/som.wav'
+    UUID = 'riri'
+    meta ='''
+      <!doctype html>
+        <title>test</title>
+        <p> Artist: Rihanna </p>
+        <p> Album:  ANTI </p>
+        <p> Song:   Same Ol' Mistakes </p>
+        <IMG SRC="ANTI_album_artwork.jpeg" ALT="some text" WIDTH=384 HEIGHT=384>
+        '''
+    load_new_song(PATH, UUID, meta)
 
-    # # load in rihanna
-    # piu.hash_song('/Users/ben/Desktop/same_dir/same_ole_mistakes.wav', uuid = 'riri')
+    piu = pickle.load(open('piu_obj2.pkl', 'r'))
 
-    def test_predict():
-        results = []
-        song_lst = glob.glob('./wav_songs/*')
-        n, i = len(song_lst), 1
-        for f in song_lst:
-            sys.stdout.write('\r{}'.format(i/n))
-            sys.stdout.flush()
-            i += 1
 
-            #grab only uuid from path
-            uuid = f.split('/')[-1].strip('.wav')
-            fs, data = wavfile.read(f)
-            pred = PredictSong(data, piu).predict()
-            results.append((pred == uuid))
-        return results
+
+
