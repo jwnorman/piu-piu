@@ -116,8 +116,8 @@ class PredictSong(object):
         streamer = self.song_streamer(song_segments)
         match = False
         itr_num = 1
-        while itr_num < 30:#not match:
-            # print 'num_iter', itr_num
+        while itr_num is not match:
+            print 'num_iter', itr_num
             try:
                 fd, freq = streamer.next()
             except StopIteration as e:
@@ -152,14 +152,15 @@ class PredictSong(object):
                                     for k,v in self.counters[i].iteritems()} # proportion
 
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
-                if (self.props[i][max_key] >= self.threshold): # and (self.hash_counter[i] >= 3):
-                    if max_key == truth:
-                        val = 1
-                    if (max_key != truth):
-                        val = -1
-            self.bin_results[i][val] += 1
-        #return self.bin_results
-        #return False
+                if (self.props[i][max_key] >= self.threshold) and (num_iter >= 5):
+                    return max_key
+        #             if max_key == truth:
+        #                 val = 1
+        #             if (max_key != truth):
+        #                 val = -1
+        #     self.bin_results[i][val] += 1
+        # #return self.bin_results
+        return False
 
 
 class PiuHash(object):
@@ -299,16 +300,44 @@ def pred():
 if __name__ == '__main__':
     app.debug = True
     app.run(host='0.0.0.0', port=8887)
-    # from flask import Flask
+# =======
+#     # app.debug = True
+#     # app.run(host='0.0.0.0', port=8886)
+# >>>>>>> 6f07db147535b125c6168292802e9467e33e4245
+#     # from flask import Flask
 
-    # app = Flask(__name__)
+#     # app = Flask(__name__)
 
-    # buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
-    #            np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
-    #            [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
+# <<<<<<< HEAD
+#     # buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
+#     #            np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
+#     #            [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
   
+# =======
+#     # old_buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
+#     #           [0, 350, 3000], np.arange(0, 3000, 100), [0, 200, 1000, 3000], \
+#     #           [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
+#     #           [0, 100, 200, 400, 800, 1600, 3000]]
 
+#     buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
+#                np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
+#                [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
+#     piu = PiuHash(bins=buckets)
+#     # @app.route('/')
+#     # def load():
+#     #     piu = pickle.load(open('piu_obj.plk', 'r'))
+#     #     S = StreamSong(piu)
+#     #     return S.stream()
+# >>>>>>> 6f07db147535b125c6168292802e9467e33e4245
 
+#     try:
+#         h = open('new_hash/phash', 'r')
+#         m = open('./pmeta_full', 'r')
+#     except:
+#         h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/piu_obj.pkl', 'r')
+#         m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
+
+# <<<<<<< HEAD
 
 # if __name__ == '__main__':
 #     buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
@@ -349,5 +378,28 @@ if __name__ == '__main__':
 #         return results
 
 
+# =======
+#     piu.piu_hash = pickle.load(h)
+#     piu.meta = pickle.load(m)
+
+#     # # load in rihanna
+#     # piu.hash_song('/Users/ben/Desktop/same_dir/same_ole_mistakes.wav', uuid = 'riri')
+
+#     def test_predict():
+#         results = []
+#         song_lst = glob.glob('./wav_songs/*')
+#         n, i = len(song_lst), 1
+#         for f in song_lst:
+#             sys.stdout.write('\r{}'.format(i/n))
+#             sys.stdout.flush()
+#             i += 1
+
+#             #grab only uuid from path
+#             uuid = f.split('/')[-1].strip('.wav')
+#             fs, data = wavfile.read(f)
+#             pred = PredictSong(data, piu).predict()
+#             results.append((pred == uuid))
+#         return results
+# >>>>>>> 6f07db147535b125c6168292802e9467e33e4245
 
 # piu.convert_and_load_songs('/Users/ben/Desktop/Orig_songs/Music/', filter_by='.mp3')
