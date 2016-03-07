@@ -68,17 +68,17 @@ class StreamSong(object):
         # plt.axis([0, 1000, 0, 1000])
         # plt.show()
         sdis.start()
-        while (not self.timeout_flag): # and (not self.finished_flag):
+        while (not self.timeout_flag) and (not self.finished_flag):
             pass
         sdis.stop()
-        sdis = None
-        print self.predictions.bin_results
+        if self.truth is not None:
+            print self.predictions.bin_results
         return self.finished_flag
 
 
 
 class PredictSong(object):
-    def __init__(self, song, piu_hash_obj, threshold=.8):
+    def __init__(self, song, piu_hash_obj, threshold=.7):
         self.song = song
         self.piu_hash_obj = piu_hash_obj
         self.counters = [Counter() for i in range(piu_hash_obj.num_hashes)]
@@ -153,14 +153,18 @@ class PredictSong(object):
                                     for k,v in self.counters[i].iteritems()} # proportion
 
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
-                if (self.props[i][max_key] >= self.threshold): # and (self.hash_counter[i] >= 3):
-                    if max_key == truth:
-                        val = 1
-                    if (max_key != truth):
-                        val = -1
+                # get rid of hash_counter
+                if (self.props[i][max_key] >= self.threshold) and (itr_num >= 5):
+                    if truth:
+                            if max_key == truth:
+                                val = 1
+                            if (max_key != truth):
+                                val = -1
+                    else:
+                        return max_key
             self.bin_results[i][val] += 1
-        #return self.bin_results
-        #return False
+        if truth is not None:
+            return False
 
 
 class PiuHash(object):
@@ -277,24 +281,24 @@ class PiuHash(object):
 
 
 
-from flask import Flask
+# from flask import Flask
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
-buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
-           np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
-           [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
-piu = pickle.load(open('/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj.pkl', 'r'))
+# buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
+#            np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
+#            [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
+# piu = pickle.load(open('/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj.pkl', 'r'))
 
-@app.route('/')
-def home_page():
-    return 'hey fam'
+# @app.route('/')
+# def home_page():
+#     return 'hey fam'
 
-@app.route('/predict')
-def pred():
-    global piu
-    S = StreamSong(piu)
-    return S.stream()
+# @app.route('/predict')
+# def pred():
+#     global piu
+#     S = StreamSong(piu)
+#     return S.stream()
 
 
 if __name__ == '__main__':
@@ -309,25 +313,27 @@ if __name__ == '__main__':
     #           [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
     #           [0, 100, 200, 400, 800, 1600, 3000]]
 
-    buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
-               np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
-               [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
-    piu = PiuHash(bins=buckets)
+    # buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
+    #            np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
+    #            [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
+    # piu = PiuHash(bins=buckets)
     # @app.route('/')
     # def load():
     #     piu = pickle.load(open('piu_obj.plk', 'r'))
     #     S = StreamSong(piu)
     #     return S.stream()
 
-    try:
-        h = open('new_hash/phash', 'r')
-        m = open('./pmeta_full', 'r')
-    except:
-        h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/piu_obj.pkl', 'r')
-        m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
+    # try:
+    #     h = open('new_hash/phash', 'r')
+    #     m = open('./pmeta_full', 'r')
+    # except:
+    #     h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/piu_obj.pkl', 'r')
+    #     m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
 
-    piu.piu_hash = pickle.load(h)
-    piu.meta = pickle.load(m)
+    # piu.piu_hash = pickle.load(h)
+    # piu.meta = pickle.load(m)
+
+    piu = pickle.load(open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/piu_obj.pkl', 'r'))
 
     # # load in rihanna
     # piu.hash_song('/Users/ben/Desktop/same_dir/same_ole_mistakes.wav', uuid = 'riri')
