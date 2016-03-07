@@ -68,11 +68,10 @@ class StreamSong(object):
         # plt.axis([0, 1000, 0, 1000])
         # plt.show()
         sdis.start()
-        while (not self.timeout_flag): # and (not self.finished_flag):
+        while (not self.timeout_flag) and (not self.finished_flag):
             pass
         sdis.stop()
         sdis = None
-        print self.predictions.bin_results
         return self.finished_flag
 
 
@@ -299,7 +298,7 @@ def pred():
 
 if __name__ == '__main__':
     app.debug = True
-    app.run(host='0.0.0.0', port=8886)
+    app.run(host='0.0.0.0', port=8887)
     # from flask import Flask
 
     # app = Flask(__name__)
@@ -307,26 +306,8 @@ if __name__ == '__main__':
     # buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
     #            np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
     #            [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
-    # @app.route('/')
-    # def load():
-    #     piu = pickle.load(open('piu_obj.plk', 'r'))
-    #     S = StreamSong(piu)
-    #     return S.stream()
+  
 
-
-
-    # try:
-    #     h = open('new_hash/phash', 'r')
-    #     m = open('./pmeta_full', 'r')
-    # except:
-    #     h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/phash_new', 'r')
-    #     m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
-
-    # piu.piu_hash = pickle.load(h)
-    # piu.meta = pickle.load(m)
-
-    # # load in rihanna
-    # piu.hash_song('/Users/ben/Desktop/same_dir/same_ole_mistakes.wav', uuid = 'riri')
 
 
 # if __name__ == '__main__':
