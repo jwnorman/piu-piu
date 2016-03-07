@@ -8,8 +8,8 @@ from __future__ import division
 from scipy.io import wavfile
 import numpy as np
 from collections import defaultdict, Counter
-import matplotlib.pyplot as plt
-import seaborn
+# import matplotlib.pyplot as plt
+# import seaborn
 import operator
 import glob
 import sys
@@ -113,7 +113,7 @@ class PredictSong(object):
         match = False
         itr_num = 1
         while itr_num < 30:#not match:
-            print 'num_iter', itr_num
+            # print 'num_iter', itr_num
             try:
                 fd, freq = streamer.next()
             except StopIteration as e:
@@ -310,47 +310,58 @@ class PiuHash(object):
         return int(freq[bin_itr[0] + relative_argmax])
 
 
+from flask import Flask
 
-    
+app = Flask(__name__)
+
+buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
+           np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
+           [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
+piu = pickle.load(open('/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj.pkl', 'r'))
+
+@app.route('/')
+def home_page():
+    return 'hey fam'
+
+@app.route('/predict')
+def pred():
+    global piu
+    S = StreamSong(piu)
+    return S.stream()
+
 
 if __name__ == '__main__':
-    buckets = [[30,40,80,120,180,300],[0, 100, 200, 300], \
-               [0, 350, 3000], np.arange(0, 3000, 100), [0, 200, 1000, 3000], \
-               [300, 1000, 3000], [0, 300, 500, 1000, 2000, 3000], \
-               [0, 100, 200, 400, 800, 1600, 3000]]
-    piu = PiuHash(bins=buckets)
-    try:
-        h = open('wav_songs_10/phash', 'r')
-        m = open('wav_songs_10/pmeta', 'r')
-    except:
-        h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/phash_new', 'r')
-        m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
+    app.debug = True
+    app.run(host='0.0.0.0', port=8886)
+    # from flask import Flask
 
-    piu.piu_hash = pickle.load(h)
-    piu.meta = pickle.load(m)
+    # app = Flask(__name__)
 
-    # fs, data = wavfile.read('./wav_songs/ae4f47c42abf4150bfcf63376742e87d.wav')
-
-    # P = PredictSong(data, piu)
+    # buckets = [[30,40,80,120,180,300], [100, 300, 500, 1000, 3000], \
+    #            np.arange(0, 3000, 100), [300, 1000, 3000], [800, 1600, 3200], \
+    #            [1000, 2000, 3000], [2000, 3000, 4000], [500, 1000, 1500, 2000, 2500, 3000]]
+    # @app.route('/')
+    # def load():
+    #     piu = pickle.load(open('piu_obj.plk', 'r'))
+    #     S = StreamSong(piu)
+    #     return S.stream()
 
 
-    def test_predict():
-        results = []
-        song_lst = glob.glob('./wav_songs/*')
-        n, i = len(song_lst), 1
-        for f in song_lst:
-            sys.stdout.write('\r{}'.format(i/n))
-            sys.stdout.flush()
-            i += 1
 
-            #grab only uuid from path
-            uuid = f.split('/')[-1].strip('.wav')
-            fs, data = wavfile.read(f)
-            pred = PredictSong(data, piu).predict()
-            results.append((pred == uuid))
-        return results
+    # try:
+    #     h = open('new_hash/phash', 'r')
+    #     m = open('./pmeta_full', 'r')
+    # except:
+    #     h = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/phash_new', 'r')
+    #     m = open('/Users/jacknorman1/Documents/USF/MSAN/Module3/ML2/Project/piu-piu/pmeta_new.jpg', 'r')
 
-# testing live plotting
+    # piu.piu_hash = pickle.load(h)
+    # piu.meta = pickle.load(m)
+
+    # # load in rihanna
+    # piu.hash_song('/Users/ben/Desktop/same_dir/same_ole_mistakes.wav', uuid = 'riri')
+
+#  
 
     
 
