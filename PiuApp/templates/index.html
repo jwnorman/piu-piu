@@ -33,24 +33,15 @@
       $('#calculate').show()
     }
 
-    // var refresh = function(e) {
-    //   $('#logo').click(function() {
-    //     location.reload();
-    //   })
-    // }
-
     $('#calculate').bind('click', display_loading);
     $('#calculate').bind('click', display_prediction);
     $('#calculate').bind('click', hide_mic);
-    // $('#logo').bind('click', refresh)
     $('input').bind('keydown', function(e) {
-      // refresh(e)
       if (e.keyCode == 13) {
         hide_mic(e)
         display_loading(e);
         display_prediction(e)
         show_mic(e)
-
       }
     });
   });
