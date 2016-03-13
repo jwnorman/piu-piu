@@ -73,6 +73,7 @@ class StreamSong(object):
         while (not self.timeout_flag) and (not self.finished_flag):
             pass
         sdis.stop()
+
         if self.truth is not None:
             print self.predictions.bin_results
         return self.finished_flag
@@ -156,6 +157,7 @@ class PredictSong(object):
                                     for k,v in self.counters[i].iteritems()} # proportion
 
                 max_key = max(self.props[i].iteritems(), key=operator.itemgetter(1))[0]
+
                 # get rid of hash_counter
                 if (self.props[i][max_key] >= self.threshold) and (itr_num >= 5):
                     if truth:
@@ -173,6 +175,7 @@ class PredictSong(object):
             self.bin_results[i][val] += 1
         if truth is not None:
             return False
+
 
 
 class PiuHash(object):
@@ -289,6 +292,7 @@ class PiuHash(object):
         return int(freq[bin_itr[0] + relative_argmax])
 
 
+<<<<<<< HEAD
 def load_new_song(song_path, uuid, meta, 
                   piu_path ='/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj.pkl'):
     '''
@@ -305,6 +309,8 @@ def load_new_song(song_path, uuid, meta,
 
 
 
+=======
+>>>>>>> cba61a90b9404e91806d97cb613532f084d13c0d
 
 if __name__ == '__main__':
     PATH =  '/Users/ben/Desktop/same_dir/som.wav'
