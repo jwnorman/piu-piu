@@ -1,0 +1,60 @@
+{% extends "html_templ.html" %}
+{% block body %}
+<title>Piu Piu</title>
+
+<style type="text/css">
+  body {
+    padding: 3em 0 0 0;
+    margin: 0 auto;
+    font-size: 20px;
+    width: 300px;
+    font-family: 'Helvetica Neue';
+  }
+</style>
+
+<script type="text/javascript">
+  $(function() {
+    var display_loading = function(e) {
+      $.getJSON($SCRIPT_ROOT + '/loading', {}, function(data) {
+        $('#result').html(data.result);
+      });
+      return false;
+    };
+    var display_prediction = function(e) {
+      $.getJSON($SCRIPT_ROOT + '/predict_song', {}, function(data) {
+        $('#result').html(data.result);
+      });
+      return false;
+    };
+    var hide_mic = function(e) {
+      $('#calculate').hide()
+    }
+    var show_mic = function(e) {
+      $('#calculate').show()
+    }
+
+    // var refresh = function(e) {
+    //   $('#logo').click(function() {
+    //     location.reload();
+    //   })
+    // }
+
+    $('#calculate').bind('click', display_loading);
+    $('#calculate').bind('click', display_prediction);
+    $('#calculate').bind('click', hide_mic);
+    // $('#logo').bind('click', refresh)
+    $('input').bind('keydown', function(e) {
+      // refresh(e)
+      if (e.keyCode == 13) {
+        hide_mic(e)
+        display_loading(e);
+        display_prediction(e)
+        show_mic(e)
+
+      }
+    });
+  });
+</script>
+
+
+{% endblock %}

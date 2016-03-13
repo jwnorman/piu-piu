@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+</head>
+<body>
+<style type='text/css'>
+	body {
+		font-family: 'Helvetica Neue';
+		font-weight: 100;
+	}
+	h1 {
+	/*	margin-left: 0;*/
+		margin: auto;
+	}
+	h5 {
+		font-size: 14.25px;
+		font-stretch: 200;
+		margin-left: 75px;
+		width:300px;
+		font-weight: 100;
+		color: #52aad1;
+		margin-top: -20px;
+		margin-bottom: 20px;
+	}
+
+	#calculate {
+		color: #52aad1;
+		margin-left:120px;
+		font-size: 20px;
+		-webkit-transition: all 0.5s linear;
+	}
+	#spinner {
+		color: #52aad1;
+		margin-top: 20px;
+		margin-left: 40px;
+	}
+
+	#calculate:hover {
+		color:#5b5b65;
+	}
+	
+</style>
+
+<div id="header">
+<h1>
+<a href="/" id="logo">
+<img src="/static/logo.jpeg" alt="logo"
+style="width:300px;height:100px;">
+</a>
+</h1>
+
+<h5> Song Prediction Interface</h5>
+</div>
+
+<!-- Use jQuery -->
+<script type="text/javascript"
+  src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript">
+  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+{% block body %}{% endblock %}
+
+<!-- Add button -->
+<html>
+
+<p><span id="result"></span><p><a href=# id="calculate">
+<i class="fa fa-microphone fa-5x" id="microphone-button"></i>
+</a>
+</body>
+</html>
