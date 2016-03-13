@@ -207,8 +207,6 @@ class PiuHash(object):
                 pickle.dump(self.meta, pickled_meta)
                 i += 1
 
-
-
     def hash_song(self, filename, uuid, meta=""):
         """ 
         Take a path to a file, reads into wav 
@@ -282,14 +280,3 @@ def load_new_song(song_path, uuid, meta,
                   uuid = 'riri', 
                   meta = meta)
     pickle.dump(piu, open(song_path, 'w'))
-
-
-
-
-
-if __name__ == '__main__':
-    piu = pickle.load(open('/Users/ben/src/msan/adv_machineLearning/piu-piu/piu_obj2.pkl', 'r'))
-
-
-
-
